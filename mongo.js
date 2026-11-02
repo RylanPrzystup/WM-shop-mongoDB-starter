@@ -10,5 +10,11 @@ const DB_NAME = "inventoryDB";
 // Gets the connection string, connects a MongoClient to it,
 // and gives back (a promise for) the inventoryDB database.
 export async function connectDB() {
-  throw new Error("connectDB() is not built yet (Day 2)");
+  /* throw new Error("connectDB() is not built yet (Day 2)"); */
+  const uri = await getMongoURI()
+  const client = new MongoClient(uri);
+  await client.connect();
+  return client.db(DB_NAME)
+  
+
 }
