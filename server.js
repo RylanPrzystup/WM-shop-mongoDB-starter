@@ -21,26 +21,110 @@ const db = await setUpShop(app, connectDB);
 // ---------- Day 3: READ ----------
 // GET /api/products: sends back an array of every product.
 app.get("/api/products", async (req, res) => {
-  res.status(501).json({ error: "GET /api/products is not built yet (Day 3)" });
+  try{
+    const products = await db.collection("products").find().toArray();
+    res.json(products);
+  }catch(error){
+    res.status(500).json({error: error.message})
+  }
 });
 
 // GET /api/products/:id: sends back ONE product, or 404 if there's no product with that id.
 app.get("/api/products/:id", async (req, res) => {
-  res.status(501).json({ error: "GET /api/products/:id is not built yet (Day 3)" });
+    try{
+      
+    const id = req.params.id;
+    const product = await db.collection("products").findOne({ _id : id })
+    if(!product){return res.status(404).json({error: `There is no product with the id ${id}`})}
+    res.json(product)
+    
+    }
+      
+    catch(error){
+      res.status(500).json({ error: error.message })
+    }
 });
 
 // ---------- Day 4: CREATE ----------
 // POST /api/products   body: { "id": "socks", "name": "Team Socks", "price": 9.5, "emoji": "🧦", "stock": 12 }
 // Adds a new product to the store. 400 if something is missing, 409 if the id is taken.
 app.post("/api/products", async (req, res) => {
-  res.status(501).json({ error: "POST /api/products is not built yet (Day 4)" });
+  try {
+    const { id, name, price, emoji, stock } = req.body;
+
+    if (!id || !name) {
+      return res.status(400).json({ error: "id and name are required" });
+    }
+
+    if (typeof price !== "number" || price <= 0) {
+      return res.status(400).json({ error: "price must be a number more than 0" });
+    }
+
+    if (!Number.isInteger(stock) || stock < 0) {
+      return res.status(400).json({ error: "stock must be a whole number 0 or more" });
+    }
+
+    const product = {
+      _id: id,
+      name,
+      price,
+      emoji: emoji || "📦",
+      stock
+    };
+
+    await products.insertOne(product);
+
+    return res.status(201).json(product);
+
+  } catch (error) {
+    if (error.code === 11000) {
+      return res.status(409).json({
+        error: `There is already a product with the id ${req.body.id}`
+      });
+    }
+
+    return res.status(500).json({ error: "Server error" });
+  }
 });
 
 // ---------- Day 4: UPDATE ----------
 // PATCH /api/products/:id/stock   body: { "amount": 5 } or { "amount": -1 }
 // Restocks (or takes away) that product's stock. Stock can never go below 0.
 app.patch("/api/products/:id/stock", async (req, res) => {
-  res.status(501).json({ error: "PATCH /api/products/:id/stock is not built yet (Day 4)" });
+  try {
+    const id = req.params.id;
+    const { amount } = req.body;
+
+    if (!Number.isInteger(amount) || amount === 0) {
+      return res.status(400).json({
+        error: "amount must be a whole number and cannot be 0"
+      });
+    }
+
+    const product = await products.findOne({ _id: id });
+
+    if (!product) {
+      return res.status(404).json({ error: "Product not found" });
+    }
+
+    if (product.stock + amount < 0) {
+      return res.status(400).json({
+        error: `Stock can't go below 0 (${product.name} has ${product.stock})`
+      });
+    }
+
+    await products.updateOne(
+      { _id: id },
+      { $inc: { stock: amount } }
+    );
+
+    const updatedProduct = await products.findOne({ _id: id });
+
+    return res.json(updatedProduct);
+
+  } catch (error) {
+    return res.status(500).json({ error: "Server error" });
+  }
 });
 
 // ---------- Day 5: the server says no ----------
