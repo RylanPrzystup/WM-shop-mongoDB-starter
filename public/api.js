@@ -38,7 +38,8 @@ async function resetInventory() {
 // ---------- Day 3: READ ----------
 // Gives back an array of every product (from GET /api/products).
 async function getProducts() {
-  throw notBuilt("getProducts() is not built yet (Day 3)");
+  const response = await fetch ("/api/products");
+  return readJSON(response)
 }
 
 // ---------- Day 4: CREATE ----------
