@@ -130,14 +130,86 @@ app.patch("/api/products/:id/stock", async (req, res) => {
 // ---------- Day 5: the server says no ----------
 // POST /api/check   body: { "items": [{ "id": "hoodie", "qty": 2 }] }
 // Can this cart be bought? 200 if yes. 404 if an item doesn't exist, 409 if there aren't enough.
+// ---------- Day 5: the server says no ----------
+
+// Checks every item against the real stock in MongoDB
+async function findProblem(items) {
+  for (const item of items) {
+    const product = await products.findOne({ id: item.id });
+
+    // Product doesn't exist
+    if (!product) {
+      return { status: 404, error: `Product ${item.id} not found.` };
+    }
+
+    // Not enough stock
+    if (product.stock < item.qty) {
+      const message = product.stock === 0
+        ? `${product.name} is sold out.`
+        : `Only ${product.stock} ${product.name} left.`;
+
+      return { status: 409, error: message };
+    }
+  }
+
+  return null;
+}
+
+// POST /api/check
 app.post("/api/check", async (req, res) => {
-  res.status(501).json({ error: "POST /api/check is not built yet (Day 5)" });
+  try {
+    const { items } = req.body;
+
+    if (!Array.isArray(items) || items.length === 0) {
+      return res.status(400).json({ error: "Invalid items." });
+    }
+
+    const problem = await findProblem(items);
+
+    if (problem) {
+      return res.status(problem.status).json({ error: problem.error });
+    }
+
+    res.json({ ok: true });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
-// POST /api/checkout   body: { "items": [{ "id": "hoodie", "qty": 2 }] }
-// Checks the cart again, then takes the items out of stock. Sends back the total.
+// POST /api/checkout
 app.post("/api/checkout", async (req, res) => {
-  res.status(501).json({ error: "POST /api/checkout is not built yet (Day 5)" });
+  try {
+    const { items } = req.body;
+
+    if (!Array.isArray(items) || items.length === 0) {
+      return res.status(400).json({ error: "Invalid items." });
+    }
+
+    const problem = await findProblem(items);
+
+    if (problem) {
+      return res.status(problem.status).json({ error: problem.error });
+    }
+
+    let total = 0;
+
+    for (const item of items) {
+      const product = await products.findOne({ id: item.id });
+
+      total += product.price * item.qty;
+
+      await products.updateOne(
+        { id: item.id },
+        { $inc: { stock: -item.qty } }
+      );
+    }
+
+    total = Math.round(total * 100) / 100;
+
+    res.json({ ok: true, total });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
 app.listen(PORT, () => {
