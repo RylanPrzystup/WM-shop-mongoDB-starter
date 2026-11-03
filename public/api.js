@@ -73,12 +73,29 @@ async function changeStock(id, amount) {
 }
 
 // ---------- Day 5: the server says no ----------
+
 // items: [{ id, qty }]. Asks the server if this cart can be bought (POST /api/check).
 async function checkItems(items) {
-  throw notBuilt("checkItems() is not built yet (Day 5)");
+  const response = await fetch("/api/check", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({ items: items })
+  });
+
+  return readJSON(response);
 }
 
 // items: [{ id, qty }]. Asks the server to sell them (POST /api/checkout).
 async function checkout(items) {
-  throw notBuilt("checkout() is not built yet (Day 5)");
+  const response = await fetch("/api/checkout", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({ items: items })
+  });
+
+  return readJSON(response);
 }
