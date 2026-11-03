@@ -46,14 +46,30 @@ async function getProducts() {
 // product: { id, name, price, emoji, stock } from the Inventory form.
 // Asks the server to add it to the store (POST /api/products).
 async function createProduct(product) {
-  throw notBuilt("createProduct() is not built yet (Day 4)");
+  const response = await fetch("/api/products", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify(product)
+  });
+
+  return readJSON(response);
 }
 
 // ---------- Day 4: UPDATE ----------
 // id: which product. amount: how many to add (5) or take away (-1).
 // Asks the server to change that product's stock (PATCH /api/products/:id/stock).
 async function changeStock(id, amount) {
-  throw notBuilt("changeStock() is not built yet (Day 4)");
+  const response = await fetch(`/api/products/${id}/stock`, {
+    method: "PATCH",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({ amount })
+  });
+
+  return readJSON(response);
 }
 
 // ---------- Day 5: the server says no ----------
